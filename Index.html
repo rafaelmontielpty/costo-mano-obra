@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Costo de Mano de Obra — Easy Project, S.A.</title>
+<style>
+  :root{
+    --paper:#F7F6F2; --card:#FFFFFF; --ink:#1C2B39; --ink-soft:#54636F;
+    --line:#D9DED2; --blue:#2B5F7C; --blue-deep:#1B3E52; --amber:#D97B29;
+    --amber-soft:#F3E0C8; --good:#3E7A4E; --danger:#B5473A;
+    --mono:'Roboto Mono','SFMono-Regular',Consolas,monospace;
+    --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+    background-image:linear-gradient(var(--line) 1px, transparent 1px),linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:28px 28px;background-position:-1px -1px;}
+  .wrap{max-width:980px;margin:0 auto;padding:20px 16px 60px;}
+  header.top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--ink);
+    padding-bottom:14px;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand h1{font-size:19px;margin:0;}
+  .brand p{margin:2px 0 0;font-size:12.5px;color:var(--ink-soft);}
+  .status{font-family:var(--mono);font-size:11px;color:var(--ink-soft);text-align:right;}
+  .status.err{color:var(--danger);}
+  nav.tabs{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap;}
+  nav.tabs button{font-size:13.5px;font-weight:600;background:none;border:1.5px solid var(--ink);color:var(--ink);
+    padding:8px 16px;cursor:pointer;border-radius:3px;font-family:var(--sans);}
+  nav.tabs button.active{background:var(--ink);color:var(--paper);}
+  nav.tabs button:not(.active):hover{background:var(--amber-soft);}
+  .panel{display:none;} .panel.active{display:block;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:18px;margin-bottom:16px;}
+  .card h2{font-size:14.5px;margin:0 0 14px;text-transform:uppercase;letter-spacing:.6px;color:var(--blue-deep);
+    border-bottom:1px solid var(--line);padding-bottom:8px;}
+  .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
+  label{display:block;font-size:11.5px;color:var(--ink-soft);margin-bottom:4px;font-weight:600;}
+  input, select{width:100%;padding:8px 9px;border:1px solid #BFC8CE;border-radius:4px;font-family:var(--sans);
+    font-size:13.5px;background:#fff;color:var(--ink);}
+  input:focus, select:focus{outline:2px solid var(--blue);outline-offset:1px;}
+  input[type=number]{font-family:var(--mono);}
+  .btn{font-weight:600;font-size:13px;padding:9px 18px;border-radius:4px;border:1.5px solid var(--ink);
+    background:var(--ink);color:var(--paper);cursor:pointer;font-family:var(--sans);}
+  .btn:hover{background:var(--blue-deep);border-color:var(--blue-deep);}
+  .btn.outline{background:none;color:var(--ink);}
+  .btn.outline:hover{background:var(--amber-soft);}
+  .btn.danger{background:none;color:var(--danger);border-color:var(--danger);font-size:12px;padding:6px 10px;}
+  .btn.danger:hover{background:var(--danger);color:#fff;}
+  .btn.small{padding:6px 12px;font-size:12px;}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .emp-row{border:1px solid var(--line);border-radius:5px;margin-bottom:10px;overflow:hidden;}
+  .emp-head{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;cursor:pointer;background:#fff;}
+  .emp-head:hover{background:#FAFAF7;}
+  .emp-name{font-weight:700;font-size:14.5px;}
+  .emp-cargo{font-size:12px;color:var(--ink-soft);margin-top:1px;}
+  .emp-cost{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--blue-deep);}
+  .emp-cost small{display:block;font-weight:600;font-size:10px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;font-family:var(--sans);}
+  .emp-detail{display:none;padding:14px;background:var(--paper);border-top:1px dashed var(--line);}
+  .emp-detail.open{display:block;}
+  table.breakdown{width:100%;border-collapse:collapse;font-size:13px;}
+  table.breakdown td{padding:5px 4px;border-bottom:1px solid var(--line);}
+  table.breakdown td:last-child{text-align:right;font-family:var(--mono);}
+  table.breakdown tr.total td{font-weight:700;border-top:2px solid var(--ink);border-bottom:none;padding-top:8px;}
+  table.breakdown tr.total td:last-child{color:var(--blue-deep);font-size:15px;}
+  table.breakdown tr.sub td{color:var(--ink-soft);}
+  .factor-tag{display:inline-block;margin-top:8px;background:var(--amber-soft);color:#7A4A17;
+    font-family:var(--mono);font-size:12px;padding:3px 9px;border-radius:12px;font-weight:700;}
+  .row-actions{margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;}
+  .summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:16px;}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:6px;padding:14px;}
+  .stat .num{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--blue-deep);}
+  .stat .lbl{font-size:11.5px;color:var(--ink-soft);margin-top:3px;}
+  .note{font-size:11.5px;color:var(--ink-soft);line-height:1.5;margin-top:6px;}
+  .warn{font-size:12px;color:#8A4B12;background:#FBEBD3;border:1px solid #E8C48A;border-radius:5px;padding:8px 10px;margin-top:8px;}
+  .empty{text-align:center;padding:30px 10px;color:var(--ink-soft);font-size:13.5px;}
+  footer.legal{margin-top:24px;font-size:11px;color:var(--ink-soft);border-top:1px solid var(--line);padding-top:12px;line-height:1.6;}
+
+  /* Servicio tab */
+  .picker{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+  .pick-chip{border:1.5px solid var(--line);border-radius:20px;padding:7px 14px;font-size:13px;cursor:pointer;background:#fff;user-select:none;}
+  .pick-chip.selected{background:var(--blue-deep);color:#fff;border-color:var(--blue-deep);}
+  .svc-emp{border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:12px;background:#fff;}
+  .svc-emp h3{margin:0 0 10px;font-size:14px;}
+  .svc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;}
+  .result-hero{text-align:center;padding:26px 16px;background:var(--blue-deep);border-radius:8px;color:#fff;margin-bottom:16px;}
+  .result-hero .lbl{font-size:12.5px;opacity:.8;text-transform:uppercase;letter-spacing:.6px;}
+  .result-hero .num{font-family:var(--mono);font-size:40px;font-weight:700;margin-top:6px;}
+  .result-lines{margin-top:8px;}
+  .result-line{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);font-size:13.5px;}
+  .result-line strong{font-family:var(--mono);}
+  @media (max-width:520px){ .status{display:none;} .result-hero .num{font-size:30px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+        <rect x="1" y="1" width="32" height="32" rx="5" stroke="#1C2B39" stroke-width="1.5"/>
+        <path d="M8 20 L13 11 L18 20 L23 11 L27 20" stroke="#2B5F7C" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="13" cy="25" r="1.6" fill="#D97B29"/><circle cx="20" cy="25" r="1.6" fill="#D97B29"/>
+      </svg>
+      <div><h1>Costo de Mano de Obra</h1><p>Easy Project, S.A. · Servicio HVAC</p></div>
+    </div>
+    <div class="status" id="statusLabel">Conectando con Google Sheets…</div>
+  </header>
+
+  <nav class="tabs">
+    <button data-tab="servicio" class="active">Servicio</button>
+    <button data-tab="personal">Personal</button>
+    <button data-tab="config">Configuración</button>
+    <button data-tab="resumen">Resumen mensual</button>
+  </nav>
+
+  <!-- SERVICIO -->
+  <section class="panel active" id="tab-servicio">
+    <div class="card">
+      <h2>1. Duración total del servicio (por tipo de hora)</h2>
+      <div class="form-grid">
+        <div><label>Horas normales</label><input type="number" min="0" step="0.5" id="svc-dur-normal" value="0"></div>
+        <div><label>Horas extra diurnas</label><input type="number" min="0" step="0.5" id="svc-dur-diurna" value="0"></div>
+        <div><label>Horas extra nocturnas</label><input type="number" min="0" step="0.5" id="svc-dur-nocturna" value="0"></div>
+        <div><label>Horas extra mixtas</label><input type="number" min="0" step="0.5" id="svc-dur-mixta" value="0"></div>
+        <div><label>Horas feriado/domingo diurno</label><input type="number" min="0" step="0.5" id="svc-dur-feriadoD" value="0"></div>
+        <div><label>Horas feriado/domingo nocturno</label><input type="number" min="0" step="0.5" id="svc-dur-feriadoN" value="0"></div>
+      </div>
+      <p class="note">Ingresa cuánto duró el servicio en total por cada tipo de hora. Luego, por cada colaborador, indicas qué % de esas horas le corresponde (100% si estuvo todo el tiempo, menos si se sumó parcialmente).</p>
+    </div>
+    <div class="card">
+      <h2>2. Elige quién participó</h2>
+      <div class="picker" id="svcPicker"></div>
+      <div id="svcEmpForms"></div>
+    </div>
+    <div id="svcResult"></div>
+  </section>
+
+  <!-- PERSONAL -->
+  <section class="panel" id="tab-personal">
+    <div class="card">
+      <h2>Agregar colaborador</h2>
+      <div class="form-grid">
+        <div><label>Nombre</label><input id="f-nombre" placeholder="Ej. Juan Pérez"></div>
+        <div><label>Cargo</label><input id="f-cargo" placeholder="Ej. Técnico HVAC"></div>
+        <div><label>Salario mensual (B/.)</label><input id="f-salario" type="number" min="0" step="0.01" placeholder="900.00"></div>
+        <div>
+          <label>Tipo de contrato</label>
+          <select id="f-indefinido">
+            <option value="si" selected>Tiempo indefinido</option>
+            <option value="no">Definido / obra determinada</option>
+          </select>
+        </div>
+      </div>
+      <div class="row-actions">
+        <button class="btn" id="btnAdd">+ Agregar colaborador</button>
+        <button class="btn outline" id="btnCancelEdit" style="display:none;">Cancelar edición</button>
+      </div>
+    </div>
+    <div id="empList"></div>
+  </section>
+
+  <!-- CONFIG -->
+  <section class="panel" id="tab-config">
+    <div class="card">
+      <h2>Tasas patronales</h2>
+      <div class="form-grid">
+        <div><label>CSS patronal (%)</label><input id="c-cssPat" type="number" step="0.01"></div>
+        <div><label>Seguro Educativo patronal (%)</label><input id="c-sePat" type="number" step="0.01"></div>
+        <div><label>Riesgos profesionales (%)</label><input id="c-riesgo" type="number" step="0.01"></div>
+      </div>
+      <p class="note">Riesgos profesionales depende del código CIIU registrado ante la CSS — confirme el porcentaje exacto de Easy Project, S.A. con su contador.</p>
+    </div>
+    <div class="card">
+      <h2>Fondo de Cesantía</h2>
+      <div class="form-grid">
+        <div><label>Cuota prima de antigüedad (%)</label><input id="c-fcPrima" type="number" step="0.001"></div>
+        <div><label>Cuota indemnización (%)</label><input id="c-fcIndem" type="number" step="0.001"></div>
+      </div>
+      <p class="note">Ley 44 de 1995. Solo aplica a colaboradores con contrato indefinido.</p>
+    </div>
+    <div class="card">
+      <h2>Jornada laboral</h2>
+      <div class="form-grid">
+        <div><label>Horas semanales estándar</label><input id="c-horasSemanales" type="number" step="0.5"></div>
+      </div>
+      <p class="note">El valor hora se calcula como: salario mensual ÷ (horas semanales × 52 ÷ 12). Con 46 horas/semana equivale a 199.33 horas/mes — más preciso que asumir 30 días × 8 horas.</p>
+    </div>
+    <div class="card">
+      <h2>Recargos de horas extra</h2>
+      <div class="form-grid">
+        <div><label>Diurna (%)</label><input id="c-recDiurna" type="number" step="1"></div>
+        <div><label>Nocturna (%)</label><input id="c-recNocturna" type="number" step="1"></div>
+        <div><label>Mixta — prolongación nocturna (%)</label><input id="c-recMixta" type="number" step="1"></div>
+        <div><label>Feriado/domingo diurno (%)</label><input id="c-recFeriadoDiurno" type="number" step="1"></div>
+        <div><label>Feriado/domingo nocturno (%)</label><input id="c-recFeriadoNocturno" type="number" step="1"></div>
+      </div>
+      <p class="note">Diurna, nocturna y mixta según Art. 33 del Código de Trabajo (fuentes consistentes). Los recargos de feriado/domingo tienen fuentes menos consistentes — verifique con su contador antes de cotizar con ellos.</p>
+    </div>
+    <div class="card">
+      <h2>Deducciones al colaborador (referencia)</h2>
+      <div class="form-grid">
+        <div><label>CSS empleado (%)</label><input id="c-cssEmp" type="number" step="0.01"></div>
+        <div><label>Seguro Educativo empleado (%)</label><input id="c-seEmp" type="number" step="0.01"></div>
+      </div>
+      <div class="row-actions">
+        <button class="btn outline" id="btnSaveConfig">Guardar configuración</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESUMEN -->
+  <section class="panel" id="tab-resumen">
+    <div class="summary-grid" id="summaryStats"></div>
+    <div class="card">
+      <h2>Historial de servicios calculados</h2>
+      <div id="historyList"></div>
+    </div>
+  </section>
+
+  <footer class="legal">
+    Herramienta de referencia interna. Las tasas de CSS, Seguro Educativo, riesgos profesionales, Fondo de Cesantía y recargos de horas extra pueden cambiar por ley — verifique los porcentajes vigentes con su contador. Los datos se guardan en el Google Sheet conectado a esta calculadora.
+  </footer>
+</div>
+
+<script>
+/* ======================================================================
+   PEGA AQUÍ LA URL DE TU APPS SCRIPT WEB APP (termina en /exec)
+   Ver Code.gs para las instrucciones de despliegue.
+====================================================================== */
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby-N3Bbeh1mHMlGYUAh9ZliLk3wt9pz9ftAFZpAYB1ZfIFckQp00E5qAbSfKSFUu3AveQ/exec';
+
+let employees = [];
+let config = { cssPat:13.25, sePat:1.50, riesgo:2.50, cssEmp:9.75, seEmp:1.25,
+  fcPrima:1.923, fcIndem:0.327, recDiurna:25, recNocturna:50, recMixta:75,
+  recFeriadoDiurno:50, recFeriadoNocturno:75, horasSemanales:46 };
+let history = [];
+let editingId = null, openId = null;
+let svcSelected = new Set();
+let svcData = {}; // per employee: {pctNormal,pctDiurna,pctNocturna,pctMixta,pctFeriadoD,pctFeriadoN,incentivo}
+let svcDuration = {normal:0,diurna:0,nocturna:0,mixta:0,feriadoD:0,feriadoN:0};
+
+function readDuration(){
+  svcDuration = {
+    normal: Number(document.getElementById('svc-dur-normal').value)||0,
+    diurna: Number(document.getElementById('svc-dur-diurna').value)||0,
+    nocturna: Number(document.getElementById('svc-dur-nocturna').value)||0,
+    mixta: Number(document.getElementById('svc-dur-mixta').value)||0,
+    feriadoD: Number(document.getElementById('svc-dur-feriadoD').value)||0,
+    feriadoN: Number(document.getElementById('svc-dur-feriadoN').value)||0,
+  };
+}
+['normal','diurna','nocturna','mixta','feriadoD','feriadoN'].forEach(cat=>{
+  const el = document.getElementById('svc-dur-'+cat);
+  if(el) el.addEventListener('input', ()=>{ readDuration(); renderServiceResult(); });
+});
+
+const fmt = n => 'B/. ' + (isFinite(n)?n:0).toLocaleString('es-PA',{minimumFractionDigits:2,maximumFractionDigits:2});
+const setStatus = (msg, isErr) => {
+  const el = document.getElementById('statusLabel');
+  el.textContent = msg; el.classList.toggle('err', !!isErr);
+};
+
+// ---------- API ----------
+async function apiGet(action){
+  const res = await fetch(APPS_SCRIPT_URL + '?action=' + action);
+  const data = await res.json();
+  if(data.error) throw new Error(data.error);
+  return data;
+}
+async function apiPost(action, payload){
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method:'POST',
+    headers:{ 'Content-Type':'text/plain;charset=utf-8' }, // evita preflight CORS con Apps Script
+    body: JSON.stringify({ action, data: payload })
+  });
+  const data = await res.json();
+  if(data.error) throw new Error(data.error);
+  return data;
+}
+
+async function loadAll(){
+  if(APPS_SCRIPT_URL.indexOf('PEGA_AQUI') === 0){
+    setStatus('Falta pegar la URL de Apps Script en el código (ver Code.gs)', true);
+    return;
+  }
+  try{
+    setStatus('Cargando datos del Sheet…');
+    const [emp, cfg, hist] = await Promise.all([apiGet('getEmployees'), apiGet('getConfig'), apiGet('getHistory')]);
+    employees = (emp||[]).map(e=>({...e, salario:Number(e.salario)||0}));
+    if(cfg && Object.keys(cfg).length){
+      Object.keys(config).forEach(k=>{ if(cfg[k]!==undefined) config[k] = Number(cfg[k]); });
+    }
+    history = hist||[];
+    fillConfigInputs();
+    renderAll();
+    renderServicePicker();
+    renderHistory();
+    setStatus('Conectado — datos del Google Sheet');
+  }catch(err){
+    setStatus('Error de conexión: ' + err.message, true);
+  }
+}
+
+function fillConfigInputs(){
+  document.getElementById('c-cssPat').value = config.cssPat;
+  document.getElementById('c-sePat').value = config.sePat;
+  document.getElementById('c-riesgo').value = config.riesgo;
+  document.getElementById('c-cssEmp').value = config.cssEmp;
+  document.getElementById('c-seEmp').value = config.seEmp;
+  document.getElementById('c-fcPrima').value = config.fcPrima;
+  document.getElementById('c-fcIndem').value = config.fcIndem;
+  document.getElementById('c-recDiurna').value = config.recDiurna;
+  document.getElementById('c-recNocturna').value = config.recNocturna;
+  document.getElementById('c-recMixta').value = config.recMixta;
+  document.getElementById('c-recFeriadoDiurno').value = config.recFeriadoDiurno;
+  document.getElementById('c-recFeriadoNocturno').value = config.recFeriadoNocturno;
+  document.getElementById('c-horasSemanales').value = config.horasSemanales;
+}
+
+// ---------- tabs ----------
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ---------- core calc ----------
+function factorCarga(emp, incluyeDecimo){
+  const social = (config.cssPat + config.sePat + config.riesgo)/100;
+  const vac = 1/11;
+  const dec = incluyeDecimo ? 1/12 : 0;
+  const fc = (emp.indefinido !== 'no') ? (config.fcPrima+config.fcIndem)/100 : 0;
+  return 1 + social + vac + dec + fc;
+}
+function valorHora(emp){
+  const horasMensuales = config.horasSemanales * 52/12;
+  return (Number(emp.salario)||0) / horasMensuales;
+}
+
+function calcEmployeeMonthly(emp){
+  // costo mensual base (sin horas de servicio) — usado en pestaña Personal/Resumen
+  const salario = Number(emp.salario)||0;
+  const fc = factorCarga(emp, true);
+  return { costoTotal: salario*fc, factor: fc };
+}
+
+function calcServiceLine(emp, pct, duration){
+  const vh = valorHora(emp);
+  const fc = factorCarga(emp, true); // horas normales y extra sí cuentan para décimo
+  const fcIncentivo = 1 + 1/11 + ((emp.indefinido!=='no') ? (config.fcPrima+config.fcIndem)/100 : 0); // incentivo: sin CSS/SE/décimo
+
+  const horas = {
+    normal: duration.normal * (pct.pctNormal||0)/100,
+    diurna: duration.diurna * (pct.pctDiurna||0)/100,
+    nocturna: duration.nocturna * (pct.pctNocturna||0)/100,
+    mixta: duration.mixta * (pct.pctMixta||0)/100,
+    feriadoD: duration.feriadoD * (pct.pctFeriadoD||0)/100,
+    feriadoN: duration.feriadoN * (pct.pctFeriadoN||0)/100,
+  };
+
+  const normal = horas.normal * vh * fc;
+  const diurna = horas.diurna * vh*(1+config.recDiurna/100) * fc;
+  const nocturna = horas.nocturna * vh*(1+config.recNocturna/100) * fc;
+  const mixta = horas.mixta * vh*(1+config.recMixta/100) * fc;
+  const feriadoD = horas.feriadoD * vh*(1+config.recFeriadoDiurno/100) * fc;
+  const feriadoN = horas.feriadoN * vh*(1+config.recFeriadoNocturno/100) * fc;
+  const incentivo = (pct.incentivo||0) * fcIncentivo;
+
+  const total = normal+diurna+nocturna+mixta+feriadoD+feriadoN+incentivo;
+  const salario = Number(emp.salario)||0;
+  const incentivoWarn = salario>0 && (pct.incentivo||0) > salario*0.5;
+
+  return { normal,diurna,nocturna,mixta,feriadoD,feriadoN,incentivo,total,incentivoWarn,vh,horas };
+}
+
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+// ==================== SERVICIO ====================
+function renderServicePicker(){
+  const wrap = document.getElementById('svcPicker');
+  if(employees.length===0){
+    wrap.innerHTML = '<span class="note">Agrega colaboradores en la pestaña Personal primero.</span>';
+    return;
+  }
+  wrap.innerHTML = employees.map(e=>`
+    <div class="pick-chip ${svcSelected.has(e.id)?'selected':''}" data-id="${e.id}">${escapeHtml(e.nombre)}</div>
+  `).join('');
+  wrap.querySelectorAll('.pick-chip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      const id = chip.dataset.id;
+      if(svcSelected.has(id)) svcSelected.delete(id); else {
+        svcSelected.add(id);
+        if(!svcData[id]) svcData[id] = {pctNormal:100,pctDiurna:100,pctNocturna:100,pctMixta:100,pctFeriadoD:100,pctFeriadoN:100,incentivo:0};
+      }
+      renderServicePicker();
+      renderServiceForms();
+    });
+  });
+  renderServiceForms();
+}
+
+function renderServiceForms(){
+  const wrap = document.getElementById('svcEmpForms');
+  const selected = employees.filter(e=>svcSelected.has(e.id));
+  if(selected.length===0){ wrap.innerHTML=''; renderServiceResult(); return; }
+  wrap.innerHTML = selected.map(e=>{
+    const d = svcData[e.id];
+    return `
+    <div class="svc-emp" data-emp="${e.id}">
+      <h3>${escapeHtml(e.nombre)} <span class="note">(${escapeHtml(e.cargo||'')})</span></h3>
+      <div class="svc-grid">
+        <div><label>% en horas normales</label><input type="number" min="0" max="100" step="5" class="svc-in" data-f="pctNormal" value="${d.pctNormal}"></div>
+        <div><label>% en extra diurna</label><input type="number" min="0" max="100" step="5" class="svc-in" data-f="pctDiurna" value="${d.pctDiurna}"></div>
+        <div><label>% en extra nocturna</label><input type="number" min="0" max="100" step="5" class="svc-in" data-f="pctNocturna" value="${d.pctNocturna}"></div>
+        <div><label>% en extra mixta</label><input type="number" min="0" max="100" step="5" class="svc-in" data-f="pctMixta" value="${d.pctMixta}"></div>
+        <div><label>% en feriado diurno</label><input type="number" min="0" max="100" step="5" class="svc-in" data-f="pctFeriadoD" value="${d.pctFeriadoD}"></div>
+        <div><label>% en feriado nocturno</label><input type="number" min="0" max="100" step="5" class="svc-in" data-f="pctFeriadoN" value="${d.pctFeriadoN}"></div>
+        <div><label>Prima de producción / incentivo (B/.)</label><input type="number" min="0" step="0.01" class="svc-in" data-f="incentivo" value="${d.incentivo}"></div>
+      </div>
+    </div>`;
+  }).join('');
+  wrap.querySelectorAll('.svc-in').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      const empId = inp.closest('.svc-emp').dataset.emp;
+      svcData[empId][inp.dataset.f] = Number(inp.value)||0;
+      renderServiceResult();
+    });
+  });
+  renderServiceResult();
+}
+
+function renderServiceResult(){
+  const box = document.getElementById('svcResult');
+  const selected = employees.filter(e=>svcSelected.has(e.id));
+  if(selected.length===0){ box.innerHTML=''; return; }
+  readDuration();
+
+  let total = 0, warnings = [];
+  const lines = selected.map(e=>{
+    const r = calcServiceLine(e, svcData[e.id], svcDuration);
+    total += r.total;
+    if(r.incentivoWarn) warnings.push(e.nombre);
+    return { nombre:e.nombre, total:r.total };
+  });
+
+  box.innerHTML = `
+    <div class="result-hero">
+      <div class="lbl">Costo de mano de obra del servicio</div>
+      <div class="num">${fmt(total)}</div>
+    </div>
+    <div class="card">
+      <h2>Desglose por colaborador</h2>
+      <div class="result-lines">
+        ${lines.map(l=>`<div class="result-line"><span>${escapeHtml(l.nombre)}</span><strong>${fmt(l.total)}</strong></div>`).join('')}
+      </div>
+      ${warnings.length ? `<div class="warn">⚠ La prima de producción de ${warnings.map(escapeHtml).join(', ')} supera el 50% de su salario mensual — el excedente sí cotizaría CSS según el Art. 142 del Código de Trabajo. Revísalo con tu contador.</div>` : ''}
+      <div class="row-actions">
+        <button class="btn outline" id="btnToggleDetail">Ver desglose detallado</button>
+        <button class="btn" id="btnLogService">Guardar en historial</button>
+      </div>
+      <div id="svcDetailFull" style="display:none;margin-top:10px;"></div>
+    </div>
+  `;
+
+  document.getElementById('btnToggleDetail').addEventListener('click', ()=>{
+    const el = document.getElementById('svcDetailFull');
+    const show = el.style.display === 'none';
+    el.style.display = show ? 'block' : 'none';
+    if(show){
+      el.innerHTML = selected.map(e=>{
+        const r = calcServiceLine(e, svcData[e.id], svcDuration);
+        const d = svcData[e.id];
+        return `
+        <table class="breakdown" style="margin-bottom:14px;">
+          <tr><td colspan="2"><strong>${escapeHtml(e.nombre)}</strong></td></tr>
+          <tr class="sub"><td>Valor hora ordinaria</td><td>${fmt(r.vh)}</td></tr>
+          ${r.horas.normal?`<tr class="sub"><td>${r.horas.normal.toFixed(2)}h normales (${d.pctNormal}% de ${svcDuration.normal}h)</td><td>${fmt(r.normal)}</td></tr>`:''}
+          ${r.horas.diurna?`<tr class="sub"><td>${r.horas.diurna.toFixed(2)}h extra diurna (${d.pctDiurna}% de ${svcDuration.diurna}h, ${config.recDiurna}%)</td><td>${fmt(r.diurna)}</td></tr>`:''}
+          ${r.horas.nocturna?`<tr class="sub"><td>${r.horas.nocturna.toFixed(2)}h extra nocturna (${d.pctNocturna}% de ${svcDuration.nocturna}h, ${config.recNocturna}%)</td><td>${fmt(r.nocturna)}</td></tr>`:''}
+          ${r.horas.mixta?`<tr class="sub"><td>${r.horas.mixta.toFixed(2)}h extra mixta (${d.pctMixta}% de ${svcDuration.mixta}h, ${config.recMixta}%)</td><td>${fmt(r.mixta)}</td></tr>`:''}
+          ${r.horas.feriadoD?`<tr class="sub"><td>${r.horas.feriadoD.toFixed(2)}h feriado diurno (${d.pctFeriadoD}% de ${svcDuration.feriadoD}h, ${config.recFeriadoDiurno}%)</td><td>${fmt(r.feriadoD)}</td></tr>`:''}
+          ${r.horas.feriadoN?`<tr class="sub"><td>${r.horas.feriadoN.toFixed(2)}h feriado nocturno (${d.pctFeriadoN}% de ${svcDuration.feriadoN}h, ${config.recFeriadoNocturno}%)</td><td>${fmt(r.feriadoN)}</td></tr>`:''}
+          ${d.incentivo?`<tr class="sub"><td>Prima de producción (sin CSS/SE/décimo)</td><td>${fmt(r.incentivo)}</td></tr>`:''}
+          <tr class="total"><td>Total</td><td>${fmt(r.total)}</td></tr>
+        </table>`;
+      }).join('');
+    }
+  });
+
+  document.getElementById('btnLogService').addEventListener('click', async ()=>{
+    const btn = document.getElementById('btnLogService');
+    btn.disabled = true; btn.textContent = 'Guardando…';
+    try{
+      const descripcion = lines.map(l=>l.nombre).join(' + ');
+      const fullLines = selected.map(e=>{
+        const r = calcServiceLine(e, svcData[e.id], svcDuration);
+        return {
+          nombre:e.nombre, cargo:e.cargo||'', indefinido:e.indefinido,
+          pct: svcData[e.id], horas:r.horas, vh:r.vh,
+          normal:r.normal, diurna:r.diurna, nocturna:r.nocturna, mixta:r.mixta,
+          feriadoD:r.feriadoD, feriadoN:r.feriadoN, incentivo:r.incentivo, total:r.total
+        };
+      });
+      const detalle = { duracion: svcDuration, lines: fullLines, tasas: {...config} };
+      await apiPost('logService', { descripcion, detalle, costoTotal: total.toFixed(2) });
+      history.unshift({ fecha:new Date().toISOString(), descripcion, detalle_json:JSON.stringify(detalle), costo_total: total.toFixed(2) });
+      renderHistory();
+      btn.textContent = 'Guardado ✓';
+    }catch(err){
+      btn.textContent = 'Error al guardar';
+      console.error(err);
+    }
+    setTimeout(()=>{ btn.disabled=false; btn.textContent='Guardar en historial'; }, 2000);
+  });
+}
+
+// ==================== PERSONAL ====================
+function renderAll(){
+  const list = document.getElementById('empList');
+  if(employees.length===0){
+    list.innerHTML = '<div class="card"><div class="empty">Todavía no hay colaboradores. Agrega el primero arriba.</div></div>';
+    return;
+  }
+  list.innerHTML = employees.map(emp=>{
+    const c = calcEmployeeMonthly(emp);
+    const open = openId === emp.id;
+    return `
+    <div class="emp-row">
+      <div class="emp-head" data-id="${emp.id}">
+        <div>
+          <div class="emp-name">${escapeHtml(emp.nombre||'(sin nombre)')}</div>
+          <div class="emp-cargo">${escapeHtml(emp.cargo||'—')} · Salario base ${fmt(Number(emp.salario)||0)} · ${emp.indefinido==='no'?'Definido':'Indefinido'}</div>
+        </div>
+        <div class="emp-cost"><small>Costo mensual base</small>${fmt(c.costoTotal)}</div>
+      </div>
+      <div class="emp-detail ${open?'open':''}">
+        <span class="factor-tag">Factor de carga: ${c.factor.toFixed(3)}× el salario base</span>
+        <div class="row-actions">
+          <button class="btn small outline" data-edit="${emp.id}">Editar</button>
+          <button class="btn danger" data-del="${emp.id}">Eliminar</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('.emp-head').forEach(h=>h.addEventListener('click', ()=>{
+    openId = openId===h.dataset.id ? null : h.dataset.id; renderAll();
+  }));
+  list.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click', ev=>{ev.stopPropagation(); startEdit(b.dataset.edit);}));
+  list.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click', ev=>{ev.stopPropagation(); deleteEmployee(b.dataset.del);}));
+}
+
+async function persistEmployees(){
+  await apiPost('saveEmployees', employees);
+}
+
+document.getElementById('btnAdd').addEventListener('click', async ()=>{
+  const nombre = document.getElementById('f-nombre').value.trim();
+  const cargo = document.getElementById('f-cargo').value.trim();
+  const salario = document.getElementById('f-salario').value;
+  const indefinido = document.getElementById('f-indefinido').value;
+  if(!nombre || !salario){ alert('Ingresa al menos el nombre y el salario mensual.'); return; }
+
+  const btn = document.getElementById('btnAdd');
+  btn.disabled = true;
+  try{
+    if(editingId){
+      const emp = employees.find(e=>e.id===editingId);
+      Object.assign(emp, {nombre,cargo,salario,indefinido});
+      editingId = null;
+      document.getElementById('btnAdd').textContent = '+ Agregar colaborador';
+      document.getElementById('btnCancelEdit').style.display = 'none';
+    } else {
+      employees.push({id:'e'+Date.now(), nombre, cargo, salario, indefinido});
+    }
+    await persistEmployees();
+    clearForm(); renderAll(); renderServicePicker();
+  }catch(err){ alert('Error al guardar: '+err.message); }
+  btn.disabled = false;
+});
+
+document.getElementById('btnCancelEdit').addEventListener('click', ()=>{
+  editingId=null; clearForm();
+  document.getElementById('btnAdd').textContent='+ Agregar colaborador';
+  document.getElementById('btnCancelEdit').style.display='none';
+});
+
+function clearForm(){
+  document.getElementById('f-nombre').value='';
+  document.getElementById('f-cargo').value='';
+  document.getElementById('f-salario').value='';
+  document.getElementById('f-indefinido').value='si';
+}
+
+function startEdit(id){
+  const emp = employees.find(e=>e.id===id); if(!emp) return;
+  editingId=id;
+  document.getElementById('f-nombre').value=emp.nombre;
+  document.getElementById('f-cargo').value=emp.cargo;
+  document.getElementById('f-salario').value=emp.salario;
+  document.getElementById('f-indefinido').value = emp.indefinido==='no'?'no':'si';
+  document.getElementById('btnAdd').textContent='Guardar cambios';
+  document.getElementById('btnCancelEdit').style.display='inline-block';
+  document.querySelector('[data-tab="personal"]').click();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+async function deleteEmployee(id){
+  if(!confirm('¿Eliminar este colaborador?')) return;
+  employees = employees.filter(e=>e.id!==id);
+  svcSelected.delete(id); delete svcData[id];
+  await persistEmployees();
+  renderAll(); renderServicePicker();
+}
+
+// ==================== CONFIG ====================
+document.getElementById('btnSaveConfig').addEventListener('click', async ()=>{
+  const btn = document.getElementById('btnSaveConfig');
+  ['cssPat','sePat','riesgo','cssEmp','seEmp','fcPrima','fcIndem','recDiurna','recNocturna','recMixta','recFeriadoDiurno','recFeriadoNocturno','horasSemanales']
+    .forEach(k=> config[k] = Number(document.getElementById('c-'+k).value)||0 );
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  try{
+    await apiPost('saveConfig', config);
+    renderAll(); renderServiceForms();
+    btn.textContent = 'Guardado ✓';
+  }catch(err){ btn.textContent = 'Error'; console.error(err); }
+  setTimeout(()=>{ btn.disabled=false; btn.textContent='Guardar configuración'; }, 1800);
+});
+
+// ==================== RESUMEN / HISTORIAL ====================
+function renderHistory(){
+  const box = document.getElementById('historyList');
+  const stats = document.getElementById('summaryStats');
+  stats.innerHTML = `
+    <div class="stat"><div class="num">${employees.length}</div><div class="lbl">Colaboradores registrados</div></div>
+    <div class="stat"><div class="num">${history.length}</div><div class="lbl">Servicios calculados</div></div>
+  `;
+  if(!history.length){ box.innerHTML = '<div class="empty">Aún no has guardado ningún servicio.</div>'; return; }
+  box.innerHTML = history.slice(0,50).map((h,i)=>`
+    <div class="result-line">
+      <span>${new Date(h.fecha).toLocaleDateString('es-PA')} — ${escapeHtml(h.descripcion||'')}</span>
+      <span style="display:flex;align-items:center;gap:10px;">
+        <strong>${fmt(Number(h.costo_total)||0)}</strong>
+        <button class="btn small outline" data-print="${i}">Imprimir</button>
+      </span>
+    </div>
+  `).join('');
+  box.querySelectorAll('[data-print]').forEach(b=>{
+    b.addEventListener('click', ()=> printService(history[Number(b.dataset.print)]));
+  });
+}
+
+function printService(entry){
+  let detalle;
+  try{ detalle = JSON.parse(entry.detalle_json); }catch(err){ alert('No se pudo leer el detalle de este registro.'); return; }
+  const fecha = new Date(entry.fecha).toLocaleString('es-PA');
+  const lines = detalle.lines || [];
+
+  const rowsHtml = lines.map(l=>`
+    <table class="p-breakdown">
+      <tr><td colspan="2" class="p-name">${escapeHtml(l.nombre)} ${l.cargo?('— '+escapeHtml(l.cargo)):''}</td></tr>
+      <tr><td>Valor hora ordinaria</td><td>${fmt(l.vh)}</td></tr>
+      ${l.horas.normal?`<tr><td>${l.horas.normal.toFixed(2)}h normales (${l.pct.pctNormal}% de ${detalle.duracion.normal}h)</td><td>${fmt(l.normal)}</td></tr>`:''}
+      ${l.horas.diurna?`<tr><td>${l.horas.diurna.toFixed(2)}h extra diurna (${l.pct.pctDiurna}% de ${detalle.duracion.diurna}h)</td><td>${fmt(l.diurna)}</td></tr>`:''}
+      ${l.horas.nocturna?`<tr><td>${l.horas.nocturna.toFixed(2)}h extra nocturna (${l.pct.pctNocturna}% de ${detalle.duracion.nocturna}h)</td><td>${fmt(l.nocturna)}</td></tr>`:''}
+      ${l.horas.mixta?`<tr><td>${l.horas.mixta.toFixed(2)}h extra mixta (${l.pct.pctMixta}% de ${detalle.duracion.mixta}h)</td><td>${fmt(l.mixta)}</td></tr>`:''}
+      ${l.horas.feriadoD?`<tr><td>${l.horas.feriadoD.toFixed(2)}h feriado diurno (${l.pct.pctFeriadoD}% de ${detalle.duracion.feriadoD}h)</td><td>${fmt(l.feriadoD)}</td></tr>`:''}
+      ${l.horas.feriadoN?`<tr><td>${l.horas.feriadoN.toFixed(2)}h feriado nocturno (${l.pct.pctFeriadoN}% de ${detalle.duracion.feriadoN}h)</td><td>${fmt(l.feriadoN)}</td></tr>`:''}
+      ${l.incentivo?`<tr><td>Prima de producción (sin CSS/SE/décimo)</td><td>${fmt(l.incentivo)}</td></tr>`:''}
+      <tr class="p-total"><td>Subtotal</td><td>${fmt(l.total)}</td></tr>
+    </table>
+  `).join('');
+
+  const tasas = detalle.tasas || {};
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Costo de servicio — ${escapeHtml(entry.descripcion||'')}</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;color:#1C2B39;padding:24px;max-width:640px;margin:0 auto;}
+    h1{font-size:18px;margin:0 0 2px;} .sub{color:#54636F;font-size:12px;margin-bottom:18px;}
+    table.p-breakdown{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:13px;}
+    table.p-breakdown td{padding:4px 2px;border-bottom:1px solid #D9DED2;}
+    table.p-breakdown td:last-child{text-align:right;font-family:'Courier New',monospace;}
+    .p-name{font-weight:700;font-size:14px;padding-top:10px !important;border-bottom:2px solid #1C2B39 !important;}
+    .p-total td{font-weight:700;border-top:1.5px solid #1C2B39;border-bottom:none;}
+    .grand{margin-top:10px;padding-top:12px;border-top:3px solid #1C2B39;display:flex;justify-content:space-between;font-size:18px;font-weight:700;}
+    .foot{margin-top:26px;font-size:10.5px;color:#54636F;}
+  </style></head>
+  <body>
+    <h1>Easy Project, S.A. — Costo de mano de obra del servicio</h1>
+    <div class="sub">Guardado el ${fecha} · ${escapeHtml(entry.descripcion||'')}</div>
+    ${rowsHtml}
+    <div class="grand"><span>Costo total del servicio</span><span>${fmt(Number(entry.costo_total)||0)}</span></div>
+    <div class="foot">Tasas usadas: CSS patronal ${tasas.cssPat||''}% · SE patronal ${tasas.sePat||''}% · Riesgos prof. ${tasas.riesgo||''}% · Horas semanales estándar ${tasas.horasSemanales||''}. Documento de referencia interna, no es una factura.</div>
+    <script>window.onload = () => window.print();<\/script>
+  </body></html>`;
+
+  const w = window.open('', '_blank');
+  w.document.write(html);
+  w.document.close();
+}
+
+loadAll();
+readDuration();
+</script>
+</body>
+</html>
